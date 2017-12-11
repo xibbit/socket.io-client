@@ -1,8 +1,3 @@
-/*!
- * Socket.IO v2.2.0
- * (c) 2014-2018 Guillermo Rauch
- * Released under the MIT License.
- */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -3422,7 +3417,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var isBinary = typeof data !== 'string' && data !== undefined;
 	  var req = this.request({ method: 'POST', data: data, isBinary: isBinary });
 	  var self = this;
-	  req.on('success', fn);
+	  req.on('data', fn);
 	  req.on('error', function (err) {
 	    self.onError('xhr post error', err);
 	  });
@@ -3934,7 +3929,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	Polling.prototype.write = function (packets) {
 	  var self = this;
 	  this.writable = false;
-	  var callbackfn = function () {
+	  var callback = function (packet, index, total) {
+	    // handle the message
+	    self.onPacket(packet);
+	  };
+	  var callbackfn = function (data) {
+	    data = data.substring(data.startsWith('ok')? 2: 0);
+	    if (data.length) {
+	      // decode payload
+	      parser.decodePayload(data, self.socket.binaryType, callback);
+	    }
 	    self.writable = true;
 	    self.emit('drain');
 	  };
@@ -3954,6 +3958,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var query = this.query || {};
 	  var schema = this.secure ? 'https' : 'http';
 	  var port = '';
+	  var path = (typeof this.path === 'function') ? this.path() : this.path;
 	
 	  // cache busting is forced
 	  if (false !== this.timestampRequests) {
@@ -3978,7 +3983,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	
 	  var ipv6 = this.hostname.indexOf(':') !== -1;
-	  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
+	  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + path + query;
 	};
 
 
@@ -5707,13 +5712,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	var inherit = __webpack_require__(30);
 	var yeast = __webpack_require__(31);
 	var debug = __webpack_require__(3)('engine.io-client:websocket');
+	
 	var BrowserWebSocket, NodeWebSocket;
-	if (typeof self === 'undefined') {
+	
+	if (typeof WebSocket !== 'undefined') {
+	  BrowserWebSocket = WebSocket;
+	} else if (typeof self !== 'undefined') {
+	  BrowserWebSocket = self.WebSocket || self.MozWebSocket;
+	} else {
 	  try {
 	    NodeWebSocket = __webpack_require__(34);
 	  } catch (e) { }
-	} else {
-	  BrowserWebSocket = self.WebSocket || self.MozWebSocket;
 	}
 	
 	/**
@@ -5722,7 +5731,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * interface exposed by `ws` for Node-like environment.
 	 */
 	
-	var WebSocket = BrowserWebSocket || NodeWebSocket;
+	var WebSocketImpl = BrowserWebSocket || NodeWebSocket;
 	
 	/**
 	 * Module exports.
@@ -5746,7 +5755,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.usingBrowserWebSocket = BrowserWebSocket && !opts.forceNode;
 	  this.protocols = opts.protocols;
 	  if (!this.usingBrowserWebSocket) {
-	    WebSocket = NodeWebSocket;
+	    WebSocketImpl = NodeWebSocket;
 	  }
 	  Transport.call(this, opts);
 	}
@@ -5806,7 +5815,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	
 	  try {
-	    this.ws = this.usingBrowserWebSocket && !this.isReactNative ? (protocols ? new WebSocket(uri, protocols) : new WebSocket(uri)) : new WebSocket(uri, protocols, opts);
+	    this.ws =
+	      this.usingBrowserWebSocket && !this.isReactNative
+	        ? protocols
+	          ? new WebSocketImpl(uri, protocols)
+	          : new WebSocketImpl(uri)
+	        : new WebSocketImpl(uri, protocols, opts);
 	  } catch (err) {
 	    return this.emit('error', err);
 	  }
@@ -5943,6 +5957,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var query = this.query || {};
 	  var schema = this.secure ? 'wss' : 'ws';
 	  var port = '';
+	  var path = (typeof this.path === 'function') ? this.path() : this.path;
 	
 	  // avoid port if default for schema
 	  if (this.port && (('wss' === schema && Number(this.port) !== 443) ||
@@ -5968,7 +5983,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	
 	  var ipv6 = this.hostname.indexOf(':') !== -1;
-	  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
+	  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + path + query;
 	};
 	
 	/**
@@ -5979,7 +5994,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	
 	WS.prototype.check = function () {
-	  return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
+	  return !!WebSocketImpl && !('__initialize' in WebSocketImpl && this.name === WS.prototype.name);
 	};
 
 
