@@ -2495,7 +2495,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.query = opts.query || {};
 	  if ('string' === typeof this.query) this.query = parseqs.decode(this.query);
 	  this.upgrade = false !== opts.upgrade;
-	  this.path = (opts.path || '/engine.io').replace(/\/$/, '') + '/';
+	  this.path = (opts.path || '/engine.io');
+	  if ('string' === typeof this.path) this.path = this.path.replace(/\/$/, '') + '/';
 	  this.forceJSONP = !!opts.forceJSONP;
 	  this.jsonp = false !== opts.jsonp;
 	  this.forceBase64 = !!opts.forceBase64;
