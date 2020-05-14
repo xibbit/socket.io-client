@@ -60,7 +60,7 @@
     "zuul-ngrok": "4.0.0"
   },
   "scripts": {
-    "test": "gulp test"
+    "test": "DEBUG=socket.io-client* gulp test"
   },
   "contributors": [
     {

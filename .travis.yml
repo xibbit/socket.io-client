@@ -7,10 +7,10 @@ git:
   depth: 1
 notifications:
   irc: 'irc.freenode.org#socket.io'
-matrix:
-  include:
-    - node_js: '10'
-      env: BROWSERS=1
+#matrix:
+#  include:
+#    - node_js: '10'
+#      env: BROWSERS=1
 cache:
   directories:
     - node_modules
