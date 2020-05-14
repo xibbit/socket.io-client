@@ -70,7 +70,6 @@ function testZuul () {
 
 function testNode () {
   const MOCHA_OPTS = {
-    reporter: REPORTER,
     require: [TEST_SUPPORT_SERVER_FILE],
     bail: true
   };
